@@ -7,7 +7,8 @@ PopupWindow {
     id: calendarTrueRoot
     readonly property int today: new Date().getDate()
     property string rawCalOutput: ""
-    property string monthYear: ""
+    property int year: 0
+    property var months: null
     readonly property var weakdays: ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"]
     property var days: []
 
@@ -15,13 +16,13 @@ PopupWindow {
     property bool useAlternativeFormat: false
 
     function show() {
-        calendarTrueRoot.visible = true 
-        calendarRoot.opacity = 1 
+        calendarTrueRoot.visible = true;
+        calendarRoot.opacity = 1;
     }
 
     function hide() {
-        calendarTrueRoot.visible = false
-        calendarRoot.opacity = 0
+        calendarTrueRoot.visible = false;
+        calendarRoot.opacity = 0;
     }
 
     function parse_cal() {
@@ -31,20 +32,38 @@ PopupWindow {
                 return;
             }
 
-            calendarTrueRoot.monthYear = lines[0];
-            let days = []
+            const monthYear = lines[0].trim().split(/\s+/);
+            calendarTrueRoot.months = monthYear[0]
+            calendarTrueRoot.year = monthYear[1]
 
+            let days = [];
             for (let i = 2; i < lines.length; i++) {
-                let week = lines[i]
-                
+                let week = lines[i];
+
                 for (let j = 0; j < 7; j++) {
-                    let day = week.slice(j * 3, j * 3 + 2)
-                    let formatted = day == "" ? 0 : Number(day)
-                    days.push(formatted)
+                    let day = week.slice(j * 3, j * 3 + 2);
+                    let formatted = day == "" ? 0 : Number(day);
+                    days.push(formatted);
                 }
             }
-            calendarTrueRoot.days = days
+            calendarTrueRoot.days = days;
+            return
         }
+
+        // const lines = calendarTrueRoot.rawCalOutput.trim().split("\n")
+        // calendarTrueRoot.year = Number(lines[0].trim())
+        //
+        // let months = []
+        // for (let i = 2; i < lines.length; i += 8) {
+        //     let months3 = lines[i].trim().split(/\s+/)
+        //     for (let month of months3) {
+        //         months.push(month)
+        //     }
+        // }
+
+
+        // TODO: Handle per month days
+
     }
     anchor {
         window: barTrueRoot
@@ -52,24 +71,28 @@ PopupWindow {
         rect.y: parentWindow.height
     }
 
-    implicitWidth: 300
-    implicitHeight: 215
+    implicitWidth: 50 + (calendarTrueRoot.useAlternativeFormat ? 600 : 200)
+    implicitHeight: 15 + (calendarTrueRoot.useAlternativeFormat ? 600 : 200)
     color: "transparent"
     visible: false
 
     onShowCalendarChanged: {
         if (calendarTrueRoot.visible) {
-            calendarTrueRoot.hide()
-            return
+            calendarTrueRoot.hide();
+            return;
         }
 
-        calendarTrueRoot.show()
+        calendarTrueRoot.show();
     }
 
     Process {
-        command: ["cal", "-m"] //{
-        //     calendarTrueRoot.useAternativeFormat ? ["cal", "-m"] : ["cal", "-m -y"];
-        // }
+        command: {
+            if (calendarTrueRoot.useAlternativeFormat) {
+                ["cal", "-my"];
+            } else {
+                ["cal", "-m"];
+            }
+        }
         running: true
 
         stdout: StdioCollector {
@@ -97,7 +120,6 @@ PopupWindow {
             }
         }
 
-
         ColumnLayout {
             anchors {
                 centerIn: parent
@@ -114,7 +136,7 @@ PopupWindow {
                     Layout.columnSpan: 7
                     Layout.alignment: Qt.AlignHCenter
 
-                    text: calendarTrueRoot.monthYear
+                    text: calendarTrueRoot.months + " " + calendarTrueRoot.year
                     font {
                         family: 'Lilex Nerd Font'
                         bold: true
@@ -138,7 +160,6 @@ PopupWindow {
                     }
                 }
 
-
                 Repeater {
                     model: calendarTrueRoot.days
 
@@ -148,15 +169,12 @@ PopupWindow {
                         font {
                             family: 'Lilex Nerd Font'
                             bold: true
-                            pointSize: 12 
+                            pointSize: 12
                         }
-                        color: modelData == calendarWidget.today 
-                            ? activePalette.text : activePalette.placeholderText
-
+                        color: modelData == calendarWidget.today ? activePalette.text : activePalette.placeholderText
                     }
                 }
             }
         }
-
     }
 }

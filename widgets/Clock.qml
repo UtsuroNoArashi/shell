@@ -2,8 +2,11 @@ import QtQuick
 import Quickshell 
 
 Rectangle {
+    id: clockRoot
+
     property string time: Qt.formatDateTime(sysClock.date, "hh:mm AP")
     property string date: Qt.formatDateTime(sysClock.date, "ddd d, MMM yyyy")
+    property bool canScroll: true
 
     Text {
         id: timeDateLabel
@@ -19,7 +22,22 @@ Rectangle {
         onClicked: widgetsRoot.showCalendar()
         onEntered: timeDateLabel.text = date 
         onExited: { timeDateLabel.text = time; widgetsRoot.showCalendar() }
-        onWheel: widgetsRoot.useAlternativeFormat()
+        onWheel: {
+            if (clockRoot.canScroll) {
+                widgetsRoot.useAlternativeFormat()
+                clockRoot.canScroll = false
+            }
+
+            resetScroll.restart()
+        }
+    }
+
+    Timer {
+        id: resetScroll
+        repeat: false
+        running: true
+        interval: 300
+        onTriggered: { clockRoot.canScroll = true }
     }
 
     SystemClock {
