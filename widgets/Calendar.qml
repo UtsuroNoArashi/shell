@@ -4,311 +4,256 @@ import Quickshell
 import Quickshell.Io
 
 PopupWindow {
-    id: calendarTrueRoot
-    property string rawCalOutput: ""
-    readonly property var weekdays: ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"]
-    property var formattedCal: null
-    property bool showCalendar: false
-    property bool useAlternativeFormat: false
+    id: calendarPopup
+    property bool toggleCalendar: false
+    property bool toggleFullCalendar: false
 
-    function handle_visibility() {
-        if (calendarTrueRoot.visible) {
-            calendarTrueRoot.visible = false 
-            calendarRoot.opacity = 0
-            return 
-        }
+    property string rawOutputs: ""
+    property var dayNames: []
+    property var monthNames: []
+    property var daysByMonth: []
+    property int year: 0
 
-        calendarTrueRoot.visible = true
-        calendarRoot.opacity =  1
-    }
+    readonly property int todaysMonth: new Date().getMonth()
+    readonly property int today: new Date().getDate()
 
-    function start_cal_process() {
-        if (calendarTrueRoot.useAlternativeFormat) {
-            getCalendar.exec(["cal", "-c 1", "-my"]);
-        } else {
-            getCalendar.exec(["cal", "-m"]);
-        }
-    }
+    function set_calendars() {
+        let lines = rawOutputs.trim().split("\n");
+        lines[lines.length] = "\n";
 
-    function parse_cal() {
-        let cal = {
-            "year": 0,
-            "months": []
-        };
+        year = Number(lines[0].trim());
 
-        let lines = calendarTrueRoot.rawCalOutput.trim().split("\n");
-        if (calendarTrueRoot.useAlternativeFormat) {
-            lines[lines.length] = "\n";
+        let dayNamesList = lines[3].trim().split(/\s+/);
+        dayNames = dayNamesList;
 
-            let year = Number(lines[0].trim());
-            cal["year"] = year;
-
-            for (let i = 2; i < lines.length; i += 8) {
-                let monthName = lines[i].trim();
-
-                let days = [];
-                for (let j = i + 2; j < i + 8; j++) {
-                    let week = lines[j];
-
-                    for (let k = 0; k < 7; k++) {
-                        let day = week.slice(3 * k, 3 * k + 2);
-                        let dayFormatted = day === "" ? 0 : Number(day);
-                        days.push(dayFormatted);
-                    }
-                }
-
-                cal["months"].push({
-                    "month": monthName,
-                    "daylist": days
-                });
-            }
-        } else {
-            let monthYear = lines[0].split(" ");
-            let year = Number(monthYear[1].trim());
-            let month = monthYear[0].trim();
-            cal["year"] = year;
+        let monthNamesList = [];
+        let daysByMonthList = [];
+        for (let row = 2; row < lines.length; row += 8) {
+            let monthName = lines[row].trim();
+            monthNamesList.push(monthName);
 
             let days = [];
-            for (let i = 2; i < lines.length; i++) {
+            for (let i = row + 2; i < row + 8; i++) {
                 let week = lines[i];
 
                 for (let j = 0; j < 7; j++) {
-                    let day = week.slice(3 * j, 3 * j + 2);
-                    let dayFormatted = day === "" ? 0 : Number(day);
-                    days.push(dayFormatted);
+                    let day = lines[i].slice(j * 3, j * 3 + 2);
+                    let dday = day === "" ? 0 : Number(day);
+                    days.push(dday);
                 }
             }
-            cal["months"].push({
-                "month": month,
-                "daylist": days
-            });
+            daysByMonthList.push(days);
         }
-
-        calendarTrueRoot.formattedCal = cal;
+        monthNames = monthNamesList;
+        daysByMonth = daysByMonthList;
     }
 
     anchor {
         window: barTrueRoot
-        rect.x: parentWindow.width / 2 - width / 2
+        rect.x: parentWindow.width / 2 - implicitWidth / 2
         rect.y: parentWindow.height
     }
 
-    implicitWidth: calendarTrueRoot.useAlternativeFormat ? 850 : 250 
-    implicitHeight: calendarTrueRoot.useAlternativeFormat ? 750 : 250
+    implicitWidth: 850
+    implicitHeight: 750
+
     color: "transparent"
-    visible: false
 
-    onShowCalendarChanged: {
-        calendarTrueRoot.handle_visibility()
-    }
-
-    onUseAlternativeFormatChanged: {
-        layout.currentIndex = calendarTrueRoot.useAlternativeFormat ? 1 : 0
-        calendarTrueRoot.start_cal_process()
-    }
-
-    Behavior on visible {
-        NumberAnimation {
-            duration: 600
-            easing.type: Easing.Linear
-        }
-    }
-
-    Process {
-        id: getCalendar
-        stdout: StdioCollector {
-            onStreamFinished: {
-                calendarTrueRoot.rawCalOutput = this.text;
-                calendarTrueRoot.parse_cal();
-            }
-        }
+    onToggleCalendarChanged: {
+        visible = !visible;
+        console.log(dayNames);
     }
 
     Rectangle {
-        id: calendarRoot
+        id: popupBackground
 
-        anchors {
-            fill: parent
-            topMargin: -15
-        }
-        radius: 15
+        width: calendarPopup.toggleFullCalendar ? 850 : 250
+        height: calendarPopup.toggleFullCalendar ? 750  : 225
+
+        anchors.horizontalCenter: parent.horizontalCenter
         color: activePalette.window
-        opacity: 1
+        radius: 20
+        opacity: calendarPopup.visible ? 1.0 : 0.0
 
-        Behavior on opacity {
+        Behavior on width {
             NumberAnimation {
-                duration: 450
+                duration: 500
                 easing.type: Easing.InOutQuad
             }
         }
 
-        StackLayout {
-            id: layout
-            currentIndex: 0
-            anchors.centerIn: parent 
-
-            Item {
-            GridLayout {
-                id: singleMonthLayout
-                columns: 7
-                rowSpacing: 5
-                columnSpacing: 5
-                anchors.centerIn: parent
-                
-
-                Text {
-                    text: calendarTrueRoot.formattedCal["months"][0]["month"] + " " + calendarTrueRoot.formattedCal["year"]
-                    color: activePalette.accent
-
-                    font {
-                        pointSize: 15
-                        bold: true
-                    }
-                    Layout.columnSpan: 7
-                    Layout.alignment: Qt.AlignHCenter
-                    horizontalAlignment: Text.AlignHCenter
-                }
-
-                Repeater {
-                    model: calendarTrueRoot.weekdays
-
-                    Text {
-                        text: modelData
-                        color: activePalette.accent
-
-                        font {
-                            pointSize: 13
-                            bold: true
-                        }
-                        Layout.alignment: Qt.AlignHCenter
-                    }
-                }
-
-                Repeater {
-                    model: calendarTrueRoot.formattedCal["months"][0]["daylist"]
-
-                    Text {
-                        text: {
-                            if (modelData === 0) {
-                                return "";
-                            }
-
-                            return modelData <= 9 ? "0" + modelData : modelData;
-                        }
-                        color: {
-                            let today = new Date().getDate();
-                            if (modelData === today) {
-                                return activePalette.text;
-                            }
-                            return activePalette.placeholderText;
-                        }
-
-                        font {
-                            pointSize: 11
-                            bold: true
-                        }
-
-                        Layout.alignment: Qt.AlignHCenter
-                    }
-                }
+        Behavior on height {
+            NumberAnimation {
+                duration: 500
+                easing.type: Easing.InOutQuad
             }
         }
 
-        Item {
-            GridLayout {
-                id: fullCalendar
-                rows: 3
-                columns: 4
-                rowSpacing: 15
-                columnSpacing: 15
-                anchors.centerIn: parent
+        Behavior on opacity {
+            NumberAnimation {
+                duration: 500
+                easing.type: Easing.InOutCubic
+            }
+        }
 
-                readonly property int today: new Date().getDate()
-                readonly property int month: new Date().getMonth()
+        StackLayout {
+            currentIndex: calendarPopup.toggleFullCalendar ? 1 : 0
+            anchors.centerIn: parent
 
-                Text {
-                    text: calendarTrueRoot.formattedCal["year"]
-                    color: activePalette.accent
+            Item {
+                GridLayout {
+                    columns: 7
+                    rowSpacing: 5
+                    columnSpacing: 5
+                    anchors.centerIn: parent
 
-                    font {
-                        pointSize: 15
-                        bold: true
+                    Text {
+                        text: calendarPopup.monthNames[calendarPopup.todaysMonth] + " " + calendarPopup.year
+
+                        color: activePalette.accent
+                        font {
+                            family: "Lilex Nerd Font"
+                            pointSize: 15
+                            bold: true
+                        }
+                        Layout.columnSpan: 7
+                        Layout.alignment: Qt.AlignHCenter
                     }
-                    Layout.alignment: Qt.AlignHCenter
-                    Layout.columnSpan: 4
-                    Layout.bottomMargin: -15
-                }
 
-                Repeater {
-                    model: calendarTrueRoot.formattedCal["months"]
-
-                    GridLayout {
-                        columns: 7
-                        columnSpacing: 5
-                        rowSpacing: 5
-
-                        readonly property int monthIndex: index
+                    Repeater {
+                        model: calendarPopup.dayNames
 
                         Text {
-                            text: modelData.month
+                            text: modelData
                             color: activePalette.accent
 
                             font {
+                                family: "Lilex Nerd Font"
                                 pointSize: 13
                                 bold: true
                             }
                             Layout.alignment: Qt.AlignHCenter
-                            Layout.columnSpan: 7
                         }
+                    }
 
-                        Repeater {
-                            model: calendarTrueRoot.weekdays
+                    Repeater {
+                        model: calendarPopup.daysByMonth[calendarPopup.todaysMonth]
+
+                        Text {
+                            text: modelData === 0 ? "" : modelData <= 9 ? "0" + modelData : modelData
+                            color: calendarPopup.today === modelData ? activePalette.text : activePalette.placeholderText
+
+                            font {
+                                family: "Lilex Nerd Font"
+                                pointSize: 11
+                                bold: true
+                            }
+                            Layout.alignment: Qt.AlignHCenter
+                        }
+                    }
+                }
+            }
+
+            Item {
+                GridLayout {
+                    columns: 4
+                    rows: 3
+                    columnSpacing: 15
+                    rowSpacing: 15
+                    anchors.centerIn: parent
+
+                    Text {
+                        text: calendarPopup.year
+                        color: activePalette.accent
+
+                        font {
+                            family: "Lilex Nerd Font"
+                            pointSize: 15
+                            bold: true
+                        }
+                        Layout.alignment: Qt.AlignHCenter
+                        Layout.columnSpan: 4
+                    }
+
+                    Repeater {
+                        model: Array.from({
+                            length: 12
+                        }, (_, i) => i)
+
+                        GridLayout {
+                            columns: 7
+                            rowSpacing: 5
+                            columnSpacing: 5
+                            readonly property int currIndex: index
 
                             Text {
-                                text: modelData
+                                text: calendarPopup.monthNames[index]
                                 color: activePalette.accent
 
                                 font {
+                                    family: "Lilex Nerd Font"
                                     pointSize: 13
                                     bold: true
                                 }
                                 Layout.alignment: Qt.AlignHCenter
+                                Layout.columnSpan: 7
                             }
-                        }
 
-                        Repeater {
-                            model: modelData.daylist
+                            Repeater {
+                                model: calendarPopup.dayNames
 
-                            Text {
-                                text: {
-                                    if (modelData === 0) {
-                                        return "";
+                                Text {
+                                    text: modelData
+                                    color: activePalette.accent
+
+                                    font {
+                                        family: "Lilex Nerd Font"
+                                        pointSize: 13
+                                        bold: true
+                                    }
+                                    Layout.alignment: Qt.AlignHCenter
+                                }
+                            }
+
+                            Repeater {
+                                model: calendarPopup.daysByMonth[index]
+
+                                Text {
+                                    text: modelData === 0 ? "" : modelData <= 9 ? "0" + modelData : modelData
+                                    color: {
+                                        if (currIndex !== calendarPopup.todaysMonth) {
+                                            return activePalette.placeholderText;
+                                        }
+
+                                        if (modelData === calendarPopup.today) {
+                                            return activePalette.text;
+                                        }
+
+                                        return activePalette.placeholderText;
                                     }
 
-                                    return modelData <= 9 ? "0" + modelData : modelData;
-                                }
-                                color: {
-                                    if (fullCalendar.today === modelData && monthIndex === fullCalendar.month) {
-                                        return activePalette.text;
+                                    font {
+                                        family: "Lilex Nerd Font"
+                                        pointSize: 11
+                                        bold: true
                                     }
-                                    return activePalette.placeholderText;
                                 }
-
-                                font {
-                                    pointSize: 11
-                                    bold: true
-                                }
-                                Layout.alignment: Qt.AlignHCenter
                             }
                         }
                     }
                 }
             }
         }
-        }
     }
 
-    Component.onCompleted: {
-        calendarTrueRoot.start_cal_process()
+    Process {
+        running: true
+        command: ["cal", "-c 1", "-my"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                calendarPopup.rawOutputs = this.text;
+                calendarPopup.set_calendars();
+            }
+        }
     }
 }

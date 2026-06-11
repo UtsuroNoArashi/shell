@@ -3,26 +3,24 @@ import QtQuick
 import QtQuick.Layouts
 
 RowLayout {
-    signal showCalendar
-    signal useAlternativeFormat
-
     id: widgetsRoot
+    signal toggleCalendar
+    signal toggleFullCalendar
     anchors.centerIn: parent
 
-    onShowCalendar: {
-        calendarWidget.showCalendar = !calendarWidget.showCalendar
+    onToggleCalendar: {
+        calendarWidget.toggleCalendar = !calendarWidget.toggleCalendar;
     }
 
-    onUseAlternativeFormat: {
-        calendarWidget.useAlternativeFormat = !calendarWidget.useAlternativeFormat
+    onToggleFullCalendar: {
+        calendarWidget.toggleFullCalendar = !calendarWidget.toggleFullCalendar;
     }
 
     Clock {
         id: clockWidget
-        // Layout.preferredWidth: parent.width * 0.2 
-        // Layout.preferredHeight: parent.height
-        // Layout.alignment: Qt.AlignCenter
     }
 
-    Calendar { id: calendarWidget }
+    Calendar {
+        id: calendarWidget
+    }
 }

@@ -1,5 +1,5 @@
 import QtQuick
-import Quickshell 
+import Quickshell
 
 Rectangle {
     id: clockRoot
@@ -12,24 +12,30 @@ Rectangle {
         id: timeDateLabel
         anchors.centerIn: parent
         color: activePalette.text
-        font { family: 'Lilex Nerd Font'; pointSize: 12; bold: true }
+        font {
+            family: 'Lilex Nerd Font'
+            pointSize: 12
+            bold: true
+        }
     }
 
     MouseArea {
-        id: clockWidgetEventHandler 
+        id: clockWidgetEventHandler
         anchors.fill: timeDateLabel
         hoverEnabled: true
-        onClicked: widgetsRoot.showCalendar()
-        onEntered: timeDateLabel.text = date 
-        onExited: { timeDateLabel.text = time; widgetsRoot.showCalendar() }
+
         onWheel: {
             if (clockRoot.canScroll) {
-                widgetsRoot.useAlternativeFormat()
+                timeDateLabel.text = 
+                timeDateLabel.text == clockRoot.time ? clockRoot.date : clockRoot.time
                 clockRoot.canScroll = false
             }
-
             resetScroll.restart()
         }
+
+        onClicked: widgetsRoot.toggleFullCalendar()
+        onEntered: widgetsRoot.toggleCalendar()
+        onExited: widgetsRoot.toggleCalendar()
     }
 
     Timer {
@@ -37,7 +43,9 @@ Rectangle {
         repeat: false
         running: true
         interval: 300
-        onTriggered: { clockRoot.canScroll = true }
+        onTriggered: {
+            clockRoot.canScroll = true;
+        }
     }
 
     SystemClock {
@@ -46,6 +54,6 @@ Rectangle {
     }
 
     Component.onCompleted: {
-        timeDateLabel.text = time
+        timeDateLabel.text = time;
     }
 }
