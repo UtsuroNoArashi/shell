@@ -51,7 +51,7 @@ PopupWindow {
     anchor {
         window: barTrueRoot
         rect.x: parentWindow.width / 2 - implicitWidth / 2
-        rect.y: parentWindow.height
+        rect.y: parentWindow.height + 20
     }
 
     implicitWidth: 850
@@ -61,17 +61,16 @@ PopupWindow {
 
     onToggleCalendarChanged: {
         visible = !visible;
-        console.log(dayNames);
     }
 
     Rectangle {
         id: popupBackground
 
         width: calendarPopup.toggleFullCalendar ? 850 : 250
-        height: calendarPopup.toggleFullCalendar ? 750  : 225
+        height: calendarPopup.toggleFullCalendar ? 750 : 250
 
         anchors.horizontalCenter: parent.horizontalCenter
-        color: activePalette.window
+        color: activePalette.mid
         radius: 20
         opacity: calendarPopup.visible ? 1.0 : 0.0
 
@@ -96,35 +95,116 @@ PopupWindow {
             }
         }
 
-        StackLayout {
-            currentIndex: calendarPopup.toggleFullCalendar ? 1 : 0
-            anchors.centerIn: parent
+        Item {
+            anchors.fill: parent
+            opacity: calendarPopup.toggleFullCalendar ? 0 : 1
+            visible: opacity > 0
 
-            Item {
-                GridLayout {
-                    columns: 7
-                    rowSpacing: 5
-                    columnSpacing: 5
-                    anchors.centerIn: parent
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: 300
+                    easing.type: Easing.InOutQuad
+                }
+            }
+
+            GridLayout {
+                columns: 7
+                rowSpacing: 5
+                columnSpacing: 5
+                anchors.centerIn: parent
+
+                Text {
+                    text: calendarPopup.monthNames[calendarPopup.todaysMonth] + " " + calendarPopup.year
+
+                    color: activePalette.accent
+                    font {
+                        family: "Lilex Nerd Font"
+                        pointSize: 15
+                        bold: true
+                    }
+                    Layout.columnSpan: 7
+                    Layout.alignment: Qt.AlignHCenter
+                }
+
+                Repeater {
+                    model: calendarPopup.dayNames
 
                     Text {
-                        text: calendarPopup.monthNames[calendarPopup.todaysMonth] + " " + calendarPopup.year
-
+                        text: modelData
                         color: activePalette.accent
+
                         font {
                             family: "Lilex Nerd Font"
-                            pointSize: 15
+                            pointSize: 13
                             bold: true
                         }
-                        Layout.columnSpan: 7
                         Layout.alignment: Qt.AlignHCenter
                     }
+                }
 
-                    Repeater {
-                        model: calendarPopup.dayNames
+                Repeater {
+                    model: calendarPopup.daysByMonth[calendarPopup.todaysMonth]
+
+                    Text {
+                        text: modelData === 0 ? "" : modelData <= 9 ? "0" + modelData : modelData
+                        color: calendarPopup.today === modelData ? activePalette.text : activePalette.placeholderText
+
+                        font {
+                            family: "Lilex Nerd Font"
+                            pointSize: 11
+                            bold: true
+                        }
+                        Layout.alignment: Qt.AlignHCenter
+                    }
+                }
+            }
+        }
+
+        Item {
+            anchors.fill: parent
+            opacity: calendarPopup.toggleFullCalendar ? 1 : 0
+            visible: opacity > 0
+
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: 300
+                    easing.type: Easing.InOutQuad
+                }
+            }
+
+            GridLayout {
+                columns: 4
+                rows: 3
+                columnSpacing: 15
+                rowSpacing: 15
+                anchors.centerIn: parent
+
+                Text {
+                    text: calendarPopup.year
+                    color: activePalette.accent
+
+                    font {
+                        family: "Lilex Nerd Font"
+                        pointSize: 15
+                        bold: true
+                    }
+                    Layout.alignment: Qt.AlignHCenter
+                    Layout.columnSpan: 4
+                }
+
+                Repeater {
+                    model: Array.from({
+                        length: 12
+                    }, (_, i) => i)
+
+                    GridLayout {
+                        columns: 7
+                        rowSpacing: 5
+                        columnSpacing: 5
+                        readonly property int currIndex: index
 
                         Text {
-                            text: modelData
+                            text: calendarPopup.monthNames[index]
                             color: activePalette.accent
 
                             font {
@@ -133,61 +213,14 @@ PopupWindow {
                                 bold: true
                             }
                             Layout.alignment: Qt.AlignHCenter
+                            Layout.columnSpan: 7
                         }
-                    }
 
-                    Repeater {
-                        model: calendarPopup.daysByMonth[calendarPopup.todaysMonth]
-
-                        Text {
-                            text: modelData === 0 ? "" : modelData <= 9 ? "0" + modelData : modelData
-                            color: calendarPopup.today === modelData ? activePalette.text : activePalette.placeholderText
-
-                            font {
-                                family: "Lilex Nerd Font"
-                                pointSize: 11
-                                bold: true
-                            }
-                            Layout.alignment: Qt.AlignHCenter
-                        }
-                    }
-                }
-            }
-
-            Item {
-                GridLayout {
-                    columns: 4
-                    rows: 3
-                    columnSpacing: 15
-                    rowSpacing: 15
-                    anchors.centerIn: parent
-
-                    Text {
-                        text: calendarPopup.year
-                        color: activePalette.accent
-
-                        font {
-                            family: "Lilex Nerd Font"
-                            pointSize: 15
-                            bold: true
-                        }
-                        Layout.alignment: Qt.AlignHCenter
-                        Layout.columnSpan: 4
-                    }
-
-                    Repeater {
-                        model: Array.from({
-                            length: 12
-                        }, (_, i) => i)
-
-                        GridLayout {
-                            columns: 7
-                            rowSpacing: 5
-                            columnSpacing: 5
-                            readonly property int currIndex: index
+                        Repeater {
+                            model: calendarPopup.dayNames
 
                             Text {
-                                text: calendarPopup.monthNames[index]
+                                text: modelData
                                 color: activePalette.accent
 
                                 font {
@@ -196,47 +229,30 @@ PopupWindow {
                                     bold: true
                                 }
                                 Layout.alignment: Qt.AlignHCenter
-                                Layout.columnSpan: 7
                             }
+                        }
 
-                            Repeater {
-                                model: calendarPopup.dayNames
+                        Repeater {
+                            model: calendarPopup.daysByMonth[index]
 
-                                Text {
-                                    text: modelData
-                                    color: activePalette.accent
-
-                                    font {
-                                        family: "Lilex Nerd Font"
-                                        pointSize: 13
-                                        bold: true
-                                    }
-                                    Layout.alignment: Qt.AlignHCenter
-                                }
-                            }
-
-                            Repeater {
-                                model: calendarPopup.daysByMonth[index]
-
-                                Text {
-                                    text: modelData === 0 ? "" : modelData <= 9 ? "0" + modelData : modelData
-                                    color: {
-                                        if (currIndex !== calendarPopup.todaysMonth) {
-                                            return activePalette.placeholderText;
-                                        }
-
-                                        if (modelData === calendarPopup.today) {
-                                            return activePalette.text;
-                                        }
-
+                            Text {
+                                text: modelData === 0 ? "" : modelData <= 9 ? "0" + modelData : modelData
+                                color: {
+                                    if (currIndex !== calendarPopup.todaysMonth) {
                                         return activePalette.placeholderText;
                                     }
 
-                                    font {
-                                        family: "Lilex Nerd Font"
-                                        pointSize: 11
-                                        bold: true
+                                    if (modelData === calendarPopup.today) {
+                                        return activePalette.text;
                                     }
+
+                                    return activePalette.placeholderText;
+                                }
+
+                                font {
+                                    family: "Lilex Nerd Font"
+                                    pointSize: 11
+                                    bold: true
                                 }
                             }
                         }
