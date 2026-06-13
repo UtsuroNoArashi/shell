@@ -70,7 +70,7 @@ PopupWindow {
         height: calendarPopup.toggleFullCalendar ? 750 : 250
 
         anchors.horizontalCenter: parent.horizontalCenter
-        color: activePalette.mid
+        color: activePalette.base
         radius: 20
         opacity: calendarPopup.visible ? 1.0 : 0.0
 

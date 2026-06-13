@@ -3,7 +3,7 @@ import QtQuick
 import Quickshell
 
 ShellRoot {
-    id: shellRoot 
+    id: shellRoot
 
     Bar { }
 }
