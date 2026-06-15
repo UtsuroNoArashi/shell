@@ -1,49 +1,58 @@
 import QtQuick
-import QtQuick.Controls.Basic
-import Quickshell
+import QtQuick.Controls
+import Quickshell 
 import Quickshell.Io
 
 Rectangle {
-    id: brightnessRoot
-    property int rawBrightnessOutput
-    property int brightness
-    property int asPercentage: 100 * brightness / rawBrightnessOutput
+    id: wpctlRoot
+    property real volume
+    property int asPercentage: volume * 100
 
     function getIcon() {
-        let icons = ["", "", "", "", "", "", "", "", ""];
-        let index = parseInt(asPercentage / 10);
-        index = index < 9 ? index : 8;
-        return icons[index];
+        let icons = ["󰝟", "", "", ""] 
+        if (wpctlRoot.asPercentage === 0) {
+            return icons[0]
+        }
+
+        if (asPercentage <= 33) {
+            return icons[1]
+        }
+
+        if (asPercentage) {
+            return icons[2]
+        }
+
+        return icons[3]
     }
 
     Text {
-        text: brightnessRoot.asPercentage + "% " + brightnessRoot.getIcon()
-        color: "#f6c177"
+        text: wpctlRoot.asPercentage + "% " + wpctlRoot.getIcon()
+        color: activePalette.accent 
 
         font {
             family: "Lilex Nerd Font"
             bold: true
-            pointSize: 12
+            pointSize: 12 
         }
         anchors.centerIn: parent
 
         MouseArea {
-            anchors.fill: parent
-            hoverEnabled: true
-            onDoubleClicked: Quickshell.execDetached(["brightnessctl", "set", "25%"])
+            anchors.fill: parent 
+            hoverEnabled: true 
+            onDoubleClicked: Quickshell.execDetached(["wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@", "0%"])
             onClicked: {
-                brightnessSliderRoot.visible = !brightnessSliderRoot.visible;
-                brightnessSliderBg.opacity = brightnessSliderRoot.visible ? 1 : 0;
+                wpctlSliderRoot.visible = !wpctlSliderRoot.visible
+                wpctlSliderBg.opacity = wpctlSliderRoot.visible ? 1 : 0;
             }
         }
     }
 
     PopupWindow {
-        id: brightnessSliderRoot
+        id: wpctlSliderRoot
 
         anchor {
-            window: barTrueRoot
-            rect.x: parentWindow.width * 0.75 - implicitWidth / 4
+            window: barTrueRoot 
+            rect.x: parentWindow.width * 0.7 - implicitWidth / 4
             rect.y: parentWindow.height + 15
         }
         implicitWidth: 200
@@ -52,7 +61,7 @@ Rectangle {
         color: "transparent"
 
         Rectangle {
-            id: brightnessSliderBg
+            id: wpctlSliderBg
 
             anchors.fill: parent
             color: activePalette.window
@@ -68,11 +77,11 @@ Rectangle {
             Slider {
                 id: control
                 from: 0
-                to: brightnessRoot.rawBrightnessOutput
-                stepSize: (to / 100) * 5
+                to: 1
+                stepSize: 0.05
                 snapMode: Slider.SnapAlways
                 anchors.centerIn: parent
-                value: brightnessRoot.brightness
+                value: wpctlRoot.volume
                 live: true
 
                 background: Rectangle {
@@ -103,16 +112,17 @@ Rectangle {
                 }
 
                 onMoved: {
-                    brightnessRoot.brightness = position * to;
-                    Quickshell.execDetached(["brightnessctl", "set", position * to]);
+                    console.log(position * to)
+                    wpctlRoot.volume = position * to;
+                    Quickshell.execDetached(["wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@", position * to]);
                 }
             }
 
             HoverHandler {
                 onHoveredChanged: {
                     if (!hovered) {
-                        brightnessSliderRoot.visible = false;
-                        brightnessSliderBg.opacity = 0;
+                        wpctlSliderRoot.visible = false;
+                        wpctlSliderBg.opacity = 0;
                     }
                 }
             }
@@ -121,29 +131,20 @@ Rectangle {
 
     Timer {
         running: true
-        repeat: true
-        interval: 500
+        repeat: true 
+        interval: 500 
         onTriggered: {
-            brightnessGetter.running = !brightnessGetter.running;
+            volumeListener.running = !volumeListener.running
         }
     }
 
     Process {
-        running: true
-        command: ["brightnessctl", "max"]
+        id: volumeListener
+        command: ["wpctl", "get-volume", "@DEFAULT_AUDIO_SINK@"]
         stdout: StdioCollector {
             onStreamFinished: {
-                brightnessRoot.rawBrightnessOutput = Number(this.text);
-            }
-        }
-    }
-
-    Process {
-        id: brightnessGetter
-        command: ["brightnessctl", "get"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                brightnessRoot.brightness = Number(this.text);
+                let output = this.text
+                wpctlRoot.volume = output.trim().split(" ")[1]
             }
         }
     }
