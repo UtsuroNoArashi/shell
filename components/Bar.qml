@@ -1,29 +1,34 @@
-import QtQuick
 import Quickshell
+import QtQuick
 
+// qmllint disable uncreatable-type
 PanelWindow {
-    id: barTrueRoot
+    id: barRoot
+    // qmllint enable uncreatable-type
 
-    anchors.top: true
-    margins.top: 5
-    exclusiveZone: ExclusionMode.Ignore
+    signal toggle
 
     implicitWidth: Screen.width * 0.85
     implicitHeight: 40
 
-    color: "transparent" // Needed to have rounded borders using Rectangle 
+    anchors.top: true
+    exclusionMode: ExclusionMode.Ignore
 
-    SystemPalette { id: activePalette; colorGroup: SystemPalette.Active }
-    
-    Rectangle {
-        id: barRoot 
+    color: "transparent"
 
-        anchors.fill: parent
-
-        color: activePalette.window
-        radius: 15
+    onToggle: {
+        if (exclusionMode === ExclusionMode.Ignore) {
+            exclusionMode = ExclusionMode.Auto;
+            return;
+        }
+        exclusionMode = ExclusionMode.Ignore;
     }
 
-    WidgetContainer { } 
+    Rectangle {
+        anchors.fill: parent
+        color: colorPalette.window
 
+        ModuleContainer {}
+        radius: 15
+    }
 }

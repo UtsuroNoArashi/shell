@@ -1,9 +1,13 @@
-import "components"
-import QtQuick
 import Quickshell
+import QtQuick
+import "./components/"
 
 ShellRoot {
-    id: shellRoot
 
-    Bar { }
+    SystemPalette {
+        id: colorPalette
+        colorGroup: SystemPalette.ColorGroup.Active
+    }
+
+    Bar {} 
 }
