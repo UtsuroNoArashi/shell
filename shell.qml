@@ -1,13 +1,13 @@
 import Quickshell
 import QtQuick
-import "./components/"
+import "./utils" as Utils
+import "./components/" as Components
 
 ShellRoot {
-
-    SystemPalette {
-        id: colorPalette
-        colorGroup: SystemPalette.ColorGroup.Active
+    Utils.Theme {
+        id: colorscheme
+        currentVariant: moon
     }
 
-    Bar {} 
+    Components.Bar {}
 }

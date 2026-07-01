@@ -1,34 +1,20 @@
-import Quickshell
+import Quickshell 
 import QtQuick
 
-// qmllint disable uncreatable-type
-PanelWindow {
+PanelWindow { // qmllint disable
     id: barRoot
-    // qmllint enable uncreatable-type
 
-    signal toggle
+    readonly property font h1: ({
+        family: "Lilex Nerd Font",
+        pointSize: 12,
+        bold: true
+    })
 
-    implicitWidth: Screen.width * 0.85
-    implicitHeight: 40
+    implicitWidth: Screen.width
+    implicitHeight: 30
 
     anchors.top: true
-    exclusionMode: ExclusionMode.Ignore
+    color: colorscheme.base // qmllint disable unqualified
 
-    color: "transparent"
-
-    onToggle: {
-        if (exclusionMode === ExclusionMode.Ignore) {
-            exclusionMode = ExclusionMode.Auto;
-            return;
-        }
-        exclusionMode = ExclusionMode.Ignore;
-    }
-
-    Rectangle {
-        anchors.fill: parent
-        color: colorPalette.window
-
-        ModuleContainer {}
-        radius: 15
-    }
+    WidgetsDrawer { }
 }
