@@ -61,7 +61,7 @@ QtObject {
             iris: tIris,
             highlightLow: tHlL,
             highlightMed: tHlM,
-            highlightMed: tHlH
+            highlightHigh: tHlH
         });
     }
 

@@ -17,18 +17,8 @@ Item {
         anchors.centerIn: parent
     }
 
-    Row {
+    Modules.Settings {
         anchors.right: parent.right
-        spacing: 10
-
-        Text {
-            text: "Wifi + Settings"
-            color: colorscheme.text
-        }
+        anchors.verticalCenter: parent.verticalCenter
     }
-
-    // Modules.Settings {
-    //     anchors.right: parent.right
-    //     anchors.verticalCenter: parent.verticalCenter
-    // }
 }
