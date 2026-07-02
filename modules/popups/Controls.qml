@@ -87,19 +87,20 @@ PopupWindow {
         }
     }
 
-    MouseArea {
+    HoverHandler {
         id: hoverHandler
-        anchors.fill: parent
-        hoverEnabled: true
-        onExited: visibilityDelay.restart()
+        onHoveredChanged: {
+            if (!hovered) {
+                visibilityDelay.restart()
+            }
+        }
     }
 
     Timer {
         id: visibilityDelay
-        
         interval: 1500
         onTriggered: {
-            if (!hoverHandler.containsMouse) {
+            if (!hoverHandler.hovered) {
                 controllsRoot.hide()
             }
         }
